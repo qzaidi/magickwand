@@ -1,0 +1,12 @@
+{ 
+    "name": "magickwand",
+    "description": "native bindings for imagemagick convert",
+    "version": "0.0.1",
+    "dependencies": {
+    },
+    "repository": { 
+        "type":  "git",
+        "url":   "git://github.com/qzaidi/magickwand.git"
+    },
+    "engines": { "node" : ">=0.6.0" }
+}
