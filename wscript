@@ -22,7 +22,7 @@ def build(bld):
   obj.target = "magickwand"
   obj.source = "src/magickwand.cpp"
   obj.uselib = "MAGICKWAND"
-  obj.cxxflags = ["-D_FILE_OFFSET_BITS=64", "-D_LARGEFILE_SOURCE"]
+  obj.cxxflags = ["-g", "-D_FILE_OFFSET_BITS=64", "-D_LARGEFILE_SOURCE"]
 
 def shutdown():
   if Options.commands['clean']:
