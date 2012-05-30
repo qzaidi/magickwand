@@ -18,6 +18,14 @@ magickwand.resize('<pathtoimagefile>',newWidth,newHeight,function(err,data) {
 });
 ```
 
+To maintain aspect ratio while resizing, set one of the width/height parameters to 0.
+
+```
+magickwand.resize('<pathtoimagefile>',newWidth,0,function(err,data) {
+  fs.writeFile('/tmp/def.jpg',data,"binary");
+});
+```
+
 See examples/cdn.js on how to use this module as a middleware in connect.
 
 Requirements

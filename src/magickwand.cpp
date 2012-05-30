@@ -18,7 +18,6 @@ struct magickReq {
 
   int width;
   int height;
-  int resizewith;
   char imagefilepath[1];
 };
 
@@ -28,7 +27,8 @@ static void resize (eio_req *req) {
   ExceptionType severity;
   MagickWand *magick_wand = NewMagickWand();
   MagickBooleanType status;
-  float width,height,aspectRatio,requestedAspectRatio;
+  int width, height;
+  float aspectRatio;
  
   status = MagickReadImage(magick_wand,mgr->imagefilepath);
 
@@ -44,17 +44,11 @@ static void resize (eio_req *req) {
   height = MagickGetImageHeight(magick_wand);
   
   aspectRatio = width/height;
-  requestedAspectRatio = mgr->width/mgr->height;
 
-  if ( aspectRatio != requestedAspectRatio ) {
-    if (mgr->resizewith == 1) {
-        mgr->height = mgr->width / aspectRatio;
-    }
-    else {
-        mgr->width = mgr->height * aspectRatio;
-    }
-  }
-
+  if (mgr->height == 0)
+    mgr->height = mgr->width / aspectRatio;
+  else if (mgr->width == 0) 
+    mgr->width = mgr->height * aspectRatio;
 
   MagickResetIterator(magick_wand);
   while (MagickNextImage(magick_wand) != MagickFalse)
@@ -105,27 +99,24 @@ static int postResize(eio_req *req) {
 static Handle<Value> resizeAsync (const Arguments& args) {
   HandleScope scope;
   const char *usage = "Too few arguments: Usage: resize(pathtoimgfile,new width, new height,cb)";
-  if (args.Length() != 5) {
+  if (args.Length() != 4) {
     return ThrowException(Exception::Error(String::New(usage)));
   }
 
   String::Utf8Value name(args[0]);
   int width = args[1]->Int32Value();
   int height = args[2]->Int32Value();
-  String::Utf8Value resizeWith(args[3]);
-  Local<Function> cb = Local<Function>::Cast(args[4]);
+  Local<Function> cb = Local<Function>::Cast(args[3]);
+
+  if ((width == 0 && height == 0) || width < 0 || height < 0) {
+    return ThrowException(Exception::Error(String::New("Invalid width/height arguments")));
+  }
 
   struct magickReq *mgr = (struct magickReq *) calloc(1,sizeof(struct magickReq) + name.length());
 
   mgr->cb = Persistent<Function>::New(cb);
   mgr->width = width;
   mgr->height = height;
-  if (!strcmp(*resizeWith,"width")) {
-    mgr->resizewith = 1;
-  }
-  else {
-    mgr->resizewith = 0;
-  }
   strncpy(mgr->imagefilepath,*name,name.length() + 1);
 
   eio_custom(resize, EIO_PRI_DEFAULT, postResize, mgr);
