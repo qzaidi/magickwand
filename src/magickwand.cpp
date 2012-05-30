@@ -26,10 +26,11 @@ static void resize (eio_req *req) {
   struct magickReq *mgr = (struct magickReq *)req->data;
   ExceptionType severity;
   MagickWand *magick_wand = NewMagickWand();
-
   MagickBooleanType status;
  
   status = MagickReadImage(magick_wand,mgr->imagefilepath);
+
+  //MagickGetPage();
 
   if (status == MagickFalse) {
     mgr->exception = MagickGetException(magick_wand,&severity);
@@ -57,7 +58,6 @@ static int postResize(eio_req *req) {
   ev_unref(EV_DEFAULT_UC);
   struct magickReq *mgr = (struct magickReq *)req->data;
 
-  fprintf(stderr,"ok so far %p\n",mgr->exception);
   Handle<Value> argv[2];
 
   if (mgr->exception) {
