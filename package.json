@@ -2,11 +2,21 @@
     "name": "magickwand",
     "description": "native bindings for imagemagick convert",
     "version": "0.0.1",
+    "author": "Qasim Zaidi <qasim@zaidi.me>",
+    "contributors" : [ 
+      { "name": "Sameer Akhtar" }
+     ],
     "dependencies": {
     },
-    "repository": { 
-        "type":  "git",
-        "url":   "git://github.com/qzaidi/magickwand.git"
+    "repository": "git://github.com/qzaidi/magickwand.git",
+    "main": "index",
+    "bugs": {
+        "url": "https://github.com/qzaidi/magickwand/issues"
     },
+    "licenses" : [
+        {
+            "type" : "MIT"
+        }
+    ],
     "engines": { "node" : ">=0.6.0" }
 }
