@@ -15,6 +15,7 @@ struct magickReq {
   unsigned char *resizedImage;
   char *exception;
   size_t resizedImageLen;
+  int quality;
 
   int width;
   int height;
@@ -40,20 +41,22 @@ static void resize (eio_req *req) {
     return;
   }
 
-  width = MagickGetImageWidth(magick_wand);
-  height = MagickGetImageHeight(magick_wand);
-  
-  aspectRatio = width/height;
+  if (mgr->height == 0 || mgr->width == 0) {
+    width = MagickGetImageWidth(magick_wand);
+    height = MagickGetImageHeight(magick_wand);
 
-  if (mgr->height == 0)
-    mgr->height = mgr->width / aspectRatio;
-  else if (mgr->width == 0) 
-    mgr->width = mgr->height * aspectRatio;
+    aspectRatio = width/height;
 
-  MagickResetIterator(magick_wand);
-  while (MagickNextImage(magick_wand) != MagickFalse)
-    MagickResizeImage(magick_wand,mgr->width,mgr->height,LanczosFilter,1.0);
-  MagickResetIterator(magick_wand);
+    if (mgr->height == 0)
+      mgr->height = mgr->width / aspectRatio;
+    else if (mgr->width == 0) 
+      mgr->width = mgr->height * aspectRatio;
+  }
+
+  MagickResizeImage(magick_wand,mgr->width,mgr->height,LanczosFilter,1.0);
+
+  if (mgr->quality) 
+    MagickSetImageCompressionQuality(magick_wand,mgr->quality);
 
   mgr->resizedImage = MagickGetImageBlob(magick_wand,&mgr->resizedImageLen);
   if (!mgr->resizedImage) {
@@ -98,18 +101,24 @@ static int postResize(eio_req *req) {
 
 static Handle<Value> resizeAsync (const Arguments& args) {
   HandleScope scope;
-  const char *usage = "Too few arguments: Usage: resize(pathtoimgfile,new width, new height,cb)";
-  if (args.Length() != 4) {
+  const char *usage = "Too few arguments: Usage: resize(pathtoimgfile,new width, new height,quality,cb)";
+  if (args.Length() != 5) {
     return ThrowException(Exception::Error(String::New(usage)));
   }
 
   String::Utf8Value name(args[0]);
   int width = args[1]->Int32Value();
   int height = args[2]->Int32Value();
-  Local<Function> cb = Local<Function>::Cast(args[3]);
+  int quality = args[3]->Int32Value();
+
+  Local<Function> cb = Local<Function>::Cast(args[4]);
 
   if ((width == 0 && height == 0) || width < 0 || height < 0) {
     return ThrowException(Exception::Error(String::New("Invalid width/height arguments")));
+  }
+
+  if (quality < 0 || quality > 100) {
+    return ThrowException(Exception::Error(String::New("Invalid quality parameter")));
   }
 
   struct magickReq *mgr = (struct magickReq *) calloc(1,sizeof(struct magickReq) + name.length());
@@ -117,6 +126,7 @@ static Handle<Value> resizeAsync (const Arguments& args) {
   mgr->cb = Persistent<Function>::New(cb);
   mgr->width = width;
   mgr->height = height;
+  mgr->quality = quality;
   strncpy(mgr->imagefilepath,*name,name.length() + 1);
 
   eio_custom(resize, EIO_PRI_DEFAULT, postResize, mgr);
