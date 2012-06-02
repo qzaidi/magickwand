@@ -4,8 +4,11 @@ var mgwnd = require('./magickwand');
 
 var magickwand = {
   resize: function(imagefile, options, cb) {
-    if (!options.quality)
-      options.quality = 0;
+    // replace undefined with 0
+    [ 'quality', 'width', 'height' ].forEach(function(param) {
+      if (!options[param])
+        options[param] = 0;
+    });
 
     mgwnd.resize(imagefile,options.width,options.height,options.quality,cb);
   }

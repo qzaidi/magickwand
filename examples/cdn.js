@@ -18,12 +18,16 @@ function cdnCache(options) {
   config.mime = options.mime || '^image/';
   config.srcPath = options.srcPath ||  "public/images/";
   config.fileTypes = options.fileTypes || [ '.jpg', '.gif', '.png' ];
+  config.validSizes = options.validSizes;
   config.getParams = options.getParams || function(path) {
-    var params = path.match('/cache/([0-9]*)x([0-9]*)/(.*)');
+    var params = path.match('/' + options.path + '/([0-9]*)x([0-9]*)/(.*)');
     var result;
     var dims;
+    var size = params[1] + 'x' + params[2];
+
     if (    (params && params.length == 4)
          && (config.fileTypes.some(function(elem) { return params[3].match(elem); })) 
+         && (!config.validSizes || config.validSizes.some(function(validSize) { return (validSize == size); }))
        ) {
       result = {
         width: params[1],
