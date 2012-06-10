@@ -1,11 +1,11 @@
 magickwand
 ==========
 
-magickwand is the native port of imagemagick/convert, that can be used to resize and compress images. This can be used
+Native bindings for imagemagick, that can be used to resize and compress images. This can be used
 to dynamically resize images in an express/connect based server. See examples/cdn.js for a sample connect middleware.
 
-Most other ports of imagemagick invoke the convert binary, instead of making direct API calls. While this works, API calls 
-would be faster than invoking convert, and that is the motivation for this module.
+Most other modules exposing imagemagick invoke the convert utility, instead of making direct API calls. While this works, API calls 
+are much faster than invoking convert, and that is the motivation for this module.
 
 Example
 -------
