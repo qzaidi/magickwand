@@ -14,6 +14,7 @@ struct magickReq {
   Persistent<Function> cb;
   unsigned char *resizedImage;
   char *exception;
+  char *format;
   size_t resizedImageLen;
   int quality;
 
@@ -32,8 +33,6 @@ static void resize (eio_req *req) {
   float aspectRatio;
  
   status = MagickReadImage(magick_wand,mgr->imagefilepath);
-
-  //MagickGetPage();
 
   if (status == MagickFalse) {
     mgr->exception = MagickGetException(magick_wand,&severity);
@@ -54,6 +53,9 @@ static void resize (eio_req *req) {
   }
 
   MagickResizeImage(magick_wand,mgr->width,mgr->height,LanczosFilter,1.0);
+
+  if (mgr->format) 
+    MagickSetImageFormat(magick_wand,mgr->format);
 
   if (mgr->quality) 
     MagickSetImageCompressionQuality(magick_wand,mgr->quality);
@@ -95,6 +97,8 @@ static int postResize(eio_req *req) {
 
   mgr->cb.Dispose();
   MagickRelinquishMemory(mgr->resizedImage);
+  if (mgr->format)
+    free(mgr->format);
   free(mgr);
   return 0;
 }
@@ -102,16 +106,17 @@ static int postResize(eio_req *req) {
 static Handle<Value> resizeAsync (const Arguments& args) {
   HandleScope scope;
   const char *usage = "Too few arguments: Usage: resize(pathtoimgfile,new width, new height,quality,cb)";
-  if (args.Length() != 5) {
+  if (args.Length() != 6) {
     return ThrowException(Exception::Error(String::New(usage)));
   }
 
   String::Utf8Value name(args[0]);
+  String::Utf8Value format(args[4]); 
   int width = args[1]->Int32Value();
   int height = args[2]->Int32Value();
   int quality = args[3]->Int32Value();
 
-  Local<Function> cb = Local<Function>::Cast(args[4]);
+  Local<Function> cb = Local<Function>::Cast(args[5]);
 
   if ((width == 0 && height == 0) || width < 0 || height < 0) {
     return ThrowException(Exception::Error(String::New("Invalid width/height arguments")));
@@ -127,6 +132,10 @@ static Handle<Value> resizeAsync (const Arguments& args) {
   mgr->width = width;
   mgr->height = height;
   mgr->quality = quality;
+
+  if (*format)
+    mgr->format = strdup(*format);
+
   strncpy(mgr->imagefilepath,*name,name.length() + 1);
 
   eio_custom(resize, EIO_PRI_DEFAULT, postResize, mgr);

@@ -10,7 +10,7 @@ var magickwand = {
         options[param] = 0;
     });
 
-    mgwnd.resize(imagefile,options.width,options.height,options.quality,cb);
+    mgwnd.resize(imagefile,options.width,options.height,options.quality,options.format,cb);
   }
 };
 
