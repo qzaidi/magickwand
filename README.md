@@ -27,6 +27,13 @@ magickwand.resize('<pathtoimagefile>', { width: 100 },function(err,data) {
 });
 ```
 
+To convert to another supported format, use the format argument
+
+```
+magickwand.resize('<pathtoimagefile>', { format: 'png', width: 300, height: 250 },function(err,data) {
+  fs.writeFile('/tmp/def.jpg',data,"binary");
+});
+```
 See examples/cdn.js on how to use this module as a middleware in connect.
 
 Requirements
@@ -43,7 +50,8 @@ sudo apt-get install libmagickwand-dev pkg-config
 On Mac - you can use homebrew to install imagemagick.
 
 ```bash
-brew install imagemagick 
+brew install pkg-config
+brew install imagemagick  --disable-openmp
 ```
 
 On MacOS, I had trouble using the default recipie for imagemagick, as openmp would cause node process to hang.
