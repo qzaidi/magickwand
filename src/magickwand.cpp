@@ -18,8 +18,8 @@ struct magickReq {
   size_t resizedImageLen;
   int quality;
 
-  int width;
-  int height;
+  unsigned int width;
+  unsigned int height;
   char imagefilepath[1];
 };
 
@@ -44,13 +44,15 @@ static void resize (eio_req *req) {
     width = MagickGetImageWidth(magick_wand);
     height = MagickGetImageHeight(magick_wand);
 
-    aspectRatio = width/height;
+    aspectRatio = (width * 1.0)/height;
 
     if (mgr->height == 0)
-      mgr->height = mgr->width / aspectRatio;
+      mgr->height =  mgr->width * (1.0/aspectRatio);
     else if (mgr->width == 0) 
       mgr->width = mgr->height * aspectRatio;
   }
+
+  //fprintf(stderr,"resizing to %dx%d, ar=%f\n",mgr->width,mgr->height,aspectRatio);
 
   MagickResizeImage(magick_wand,mgr->width,mgr->height,LanczosFilter,1.0);
 

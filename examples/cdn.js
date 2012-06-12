@@ -23,17 +23,20 @@ function cdnCache(options) {
     var params = path.match('/' + options.path + '/([0-9]*)x([0-9]*)/(.*)');
     var result;
     var dims;
-    var size = params[1] + 'x' + params[2];
+    var size;
 
-    if (    (params && params.length == 4)
-         && (config.fileTypes.some(function(elem) { return params[3].match(elem); })) 
-         && (!config.validSizes || config.validSizes.some(function(validSize) { return (validSize == size); }))
-       ) {
-      result = {
-        width: params[1],
-        height: params[2],
-        path: config.srcPath + params[3]
-      };
+    if (params && params.length == 4) {
+      size = params[1] + 'x' + params[2];
+
+      if (   (config.fileTypes.some(function(elem) { return params[3].match(elem); })) 
+          && (!config.validSizes || config.validSizes.some(function(validSize) { return (validSize == size); }))
+      ) {
+        result = {
+          width: params[1],
+          height: params[2],
+          path: config.srcPath + params[3]
+        };
+      }
     }
 
     return result;
