@@ -3,13 +3,21 @@
     {
       "target_name": "magickwand",
        "sources": [ "src/magickwand.cpp" ],
+       'libraries': [ '<!@(Magick-config --libs)' ],
        "conditions": [
-        ['OS=="mac" or OS=="linux"' , {
-          "cflags": [ '<!@(pkg-config --cflags ImageMagick)' ],
-          "libraries" : [ '<!@(pkg-config --libs-only-l ImageMagick)' ],
-          "ldflags": [ '<!@(pkg-config --libs-only-L --libs-only-other ImageMagick)' ],
+        ['OS=="mac"', {
+          # cflags on OS X are stupid and have to be defined like this
+          'xcode_settings': {
+            'OTHER_CFLAGS': [
+              '<!@(Magick-config --cflags)'
+            ],
+          }
+        }, {
+          'cflags': [
+            '<!@(Magick-config --cflags)'
+          ]
         }]
-       ]
+      ]
     }
-  ],
+  ]
 }
