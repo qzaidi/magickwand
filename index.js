@@ -1,6 +1,6 @@
 "use strict";
 
-var mgwnd = require('./magickwand');
+var mgwnd = require('./build/Release/magickwand');
 
 var magickwand = {
   resize: function(imagefile, options, cb) {
