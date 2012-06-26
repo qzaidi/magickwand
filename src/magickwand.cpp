@@ -24,7 +24,7 @@ struct magickReq {
 };
 
 /* Resize image here */
-static void resize (eio_req *req) {
+static void resize (uv_work_t *req) {
   struct magickReq *mgr = (struct magickReq *)req->data;
   ExceptionType severity;
   MagickWand *magick_wand = NewMagickWand();
@@ -71,9 +71,8 @@ static void resize (eio_req *req) {
 }
 
 /* this is for the callback */
-static int postResize(eio_req *req) {
+static void postResize(uv_work_t *req) {
   HandleScope scope;
-  ev_unref(EV_DEFAULT_UC);
   struct magickReq *mgr = (struct magickReq *)req->data;
 
   Handle<Value> argv[2];
@@ -102,7 +101,8 @@ static int postResize(eio_req *req) {
   if (mgr->format)
     free(mgr->format);
   free(mgr);
-  return 0;
+
+  delete req;
 }
 
 static Handle<Value> resizeAsync (const Arguments& args) {
@@ -128,7 +128,9 @@ static Handle<Value> resizeAsync (const Arguments& args) {
     return ThrowException(Exception::Error(String::New("Invalid quality parameter")));
   }
 
+  uv_work_t *req = new uv_work_t;
   struct magickReq *mgr = (struct magickReq *) calloc(1,sizeof(struct magickReq) + name.length());
+  req->data = mgr;
 
   mgr->cb = Persistent<Function>::New(cb);
   mgr->width = width;
@@ -140,8 +142,7 @@ static Handle<Value> resizeAsync (const Arguments& args) {
 
   strncpy(mgr->imagefilepath,*name,name.length() + 1);
 
-  eio_custom(resize, EIO_PRI_DEFAULT, postResize, mgr);
-  ev_ref(EV_DEFAULT_UC);
+  uv_queue_work(uv_default_loop(),req,resize,postResize);
 
   return Undefined();
 }

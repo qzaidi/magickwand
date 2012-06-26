@@ -1,10 +1,11 @@
 { 
     "name": "magickwand",
     "description": "native bindings for imagemagick convert",
-    "version": "0.0.4",
+    "version": "0.0.5",
     "author": "Qasim Zaidi <qasim@zaidi.me>",
     "contributors" : [ 
-      { "name": "Sameer Akhtar" }
+      { "name": "Sameer Akhtar" },
+      { "name": "Binayak Mishra" }
      ],
     "dependencies": {
     },

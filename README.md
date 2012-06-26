@@ -1,9 +1,9 @@
 magickwand
 ==========
 
-Native bindings for imagemagick, that can be used to resize and compress images. This can be used to dynamically resize images in an express/connect based server. See [examples/cdn.js](https://github.com/qzaidi/magickwand/blob/master/examples/cdn.js) for an example of connect middleware using magickwand.
+Native bindings for imagemagick to resize and compress images. This can be used to dynamically resize images in an express/connect based server. See [examples/cdn.js](https://github.com/qzaidi/magickwand/blob/master/examples/cdn.js) for an example of connect middleware using magickwand.
 
-Most other modules exposing imagemagick invoke the convert utility, instead of making direct API calls. While this works, API calls are much faster than invoking convert, and that is the motivation for this module.
+Most other modules exposing imagemagick invoke the convert utility as a child process, instead of making direct C API calls. While this works, API calls are much faster than invoking convert, and that is the motivation for this module.
 
 Example
 -------
@@ -52,7 +52,7 @@ brew install pkg-config
 brew install imagemagick  --disable-openmp
 ```
 
-On MacOS, I had trouble using the default recipie for imagemagick, as openmp would cause node process to hang.
+I had trouble using the default recipe for imagemagick, as openmp would cause node process to hang.
 Make sure you have disabled openmp while building Imagemagick.If you use homebrew, use the --disable-openmp 
 option while installing imagemagick.
 
