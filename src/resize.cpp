@@ -1,14 +1,4 @@
-#include <v8.h>
-#include <node.h>
-#include <node_buffer.h>
-#include <string.h>
-#include <wand/MagickWand.h>
-
-using namespace node;
-using namespace v8;
-
-
-extern "C" void init (Handle<Object>);
+#include "./magickwand.h"
 
 struct magickReq {
   Persistent<Function> cb;
@@ -75,22 +65,28 @@ static void postResize(uv_work_t *req) {
   HandleScope scope;
   struct magickReq *mgr = (struct magickReq *)req->data;
 
-  Handle<Value> argv[2];
+  Handle<Value> argv[3];
+  Local<Object> info = Object::New();
 
   if (mgr->exception) {
     argv[0] = Exception::Error(String::New(mgr->exception));
-    argv[1] = Undefined();
+    argv[1] = argv[2] = Undefined();
     MagickRelinquishMemory(mgr->exception);
   } else {
     argv[0] = Undefined();
     Buffer *buf = Buffer::New(mgr->resizedImageLen + 1);
     memcpy(Buffer::Data(buf), mgr->resizedImage, mgr->resizedImageLen);
     argv[1] = buf->handle_;
+    Local<Integer> width = Integer::New(mgr->width);
+    Local<Integer> height = Integer::New(mgr->height);
+    info->Set(String::NewSymbol("width"), width);
+    info->Set(String::NewSymbol("height"),height);
+    argv[2] = info;
   }
 
   TryCatch try_catch;
 
-  mgr->cb->Call(Context::GetCurrent()->Global(), 2, argv);
+  mgr->cb->Call(Context::GetCurrent()->Global(), 3, argv);
 
   if (try_catch.HasCaught()) {
     FatalException(try_catch);
@@ -105,7 +101,7 @@ static void postResize(uv_work_t *req) {
   delete req;
 }
 
-static Handle<Value> resizeAsync (const Arguments& args) {
+Handle<Value> resizeAsync (const Arguments& args) {
   HandleScope scope;
   const char *usage = "Too few arguments: Usage: resize(pathtoimgfile,new width, new height,quality,cb)";
   if (args.Length() != 6) {
@@ -146,12 +142,3 @@ static Handle<Value> resizeAsync (const Arguments& args) {
 
   return Undefined();
 }
-
-
-extern "C" void init (Handle<Object> target) {
-  HandleScope scope;
-  MagickWandGenesis();
-  NODE_SET_METHOD(target, "resize", resizeAsync);
-}
-
-
