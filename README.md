@@ -17,11 +17,14 @@ magickwand.resize('<pathtoimagefile>', { width: 300, height: 200, quality: 80 } 
 });
 ```
 
-To maintain aspect ratio while resizing, set one of the width/height parameters to 0.
+To maintain aspect ratio while resizing, set one of the width/height parameters to 0. The callback is passed an info 
+argument that has the width/height of the newly resized image, and is useful in case you chose to preserve the aspect
+ratio
 
 ```
-magickwand.resize('<pathtoimagefile>', { width: 100 },function(err,data) {
+magickwand.resize('<pathtoimagefile>', { width: 100 },function(err,data,info) {
   fs.writeFile('/tmp/def.jpg',data,"binary");
+  console.log('new height is ' + info.height);
 });
 ```
 
@@ -32,6 +35,7 @@ magickwand.resize('<pathtoimagefile>', { format: 'png', width: 300, height: 250 
   fs.writeFile('/tmp/def.jpg',data,"binary");
 });
 ```
+
 See examples/cdn.js on how to use this module as a middleware in connect.
 
 Requirements
