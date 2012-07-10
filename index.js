@@ -11,6 +11,20 @@ var magickwand = {
     });
 
     mgwnd.resize(imagefile,options.width,options.height,options.quality,options.format,cb);
+  },
+
+  thumbnail: function(imagefile, options, cb) {
+    var args = {};
+    if (typeof(cb) != 'function') {
+      cb = options;
+      options = {};
+    }
+
+    [ 'width', 'height' ].forEach(function(param) {
+      args[param] = options[param] || 0;
+    });
+
+    mgwnd.thumbnail(imagefile,args.width,args.height,cb);
   }
 };
 

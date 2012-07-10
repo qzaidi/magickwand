@@ -13,5 +13,6 @@ using namespace v8;
 extern "C" void init(Handle<Object>);
 
 Handle<Value> resizeAsync (const Arguments& args);
+Handle<Value> thumbnailAsync (const Arguments& args);
 
 #endif /* _MAGICKWAND_H */
