@@ -42,9 +42,8 @@ static void resize (uv_work_t *req) {
       mgr->width = mgr->height * aspectRatio;
   }
 
-  //fprintf(stderr,"resizing to %dx%d, ar=%f\n",mgr->width,mgr->height,aspectRatio);
-
-  MagickResizeImage(magick_wand,mgr->width,mgr->height,LanczosFilter,1.0);
+  if (mgr->width && mgr->height)
+    MagickResizeImage(magick_wand,mgr->width,mgr->height,LanczosFilter,1.0);
 
   if (mgr->format) 
     MagickSetImageFormat(magick_wand,mgr->format);
@@ -116,7 +115,7 @@ Handle<Value> resizeAsync (const Arguments& args) {
 
   Local<Function> cb = Local<Function>::Cast(args[5]);
 
-  if ((width == 0 && height == 0) || width < 0 || height < 0) {
+  if (width < 0 || height < 0) {
     return ThrowException(Exception::Error(String::New("Invalid width/height arguments")));
   }
 

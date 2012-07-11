@@ -4,7 +4,11 @@ var mgwnd = require('./build/Release/magickwand');
 
 var magickwand = {
   resize: function(imagefile, options, cb) {
-    // replace undefined with 0
+
+    if (Object.keys(options).length == 0) {
+      throw new Error('Invalid width/height/format/quality arguments');
+    }
+
     [ 'quality', 'width', 'height' ].forEach(function(param) {
       if (!options[param])
         options[param] = 0;
