@@ -4,6 +4,7 @@
 #define BUILDING_NODE_EXTENSION
 #include <node.h>
 #include <node_buffer.h>
+#include <stdlib.h>
 #include <string.h>
 #include <wand/MagickWand.h>
 
