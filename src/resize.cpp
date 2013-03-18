@@ -137,7 +137,7 @@ Handle<Value> resizeAsync (const Arguments& args) {
 
   strncpy(mgr->imagefilepath,*name,name.length() + 1);
 
-  uv_queue_work(uv_default_loop(),req,resize,postResize);
+  uv_queue_work(uv_default_loop(),req,resize,(uv_after_work_cb)postResize);
 
   return Undefined();
 }

@@ -119,7 +119,7 @@ Handle<Value> thumbnailAsync (const Arguments& args) {
 
   strncpy(mgr->imagefilepath,*name,name.length() + 1);
 
-  uv_queue_work(uv_default_loop(),req,thumbnail,postThumbnail);
+  uv_queue_work(uv_default_loop(),req,thumbnail,(uv_after_work_cb)postThumbnail);
 
   return Undefined();
 }

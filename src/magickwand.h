@@ -1,7 +1,10 @@
 #ifndef _MAGICKWAND_H
 #define _MAGICKWAND_H 
 
+#ifndef BUILDING_NODE_EXTENSION
 #define BUILDING_NODE_EXTENSION
+#endif
+
 #include <node.h>
 #include <node_buffer.h>
 #include <stdlib.h>

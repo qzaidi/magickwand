@@ -6,3 +6,5 @@ extern "C" void init (Handle<Object> target) {
   NODE_SET_METHOD(target, "resize", resizeAsync);
   NODE_SET_METHOD(target, "thumbnail", thumbnailAsync);
 }
+
+NODE_MODULE(magickwand, init)
