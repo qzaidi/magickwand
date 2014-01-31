@@ -24,11 +24,11 @@ var magickwand = {
       options = {};
     }
 
-    [ 'width', 'height' ].forEach(function(param) {
+    [ 'width', 'height', 'quality' ].forEach(function(param) {
       args[param] = options[param] || 0;
     });
 
-    mgwnd.thumbnail(imagefile,args.width,args.height,cb);
+    mgwnd.thumbnail(imagefile,args.width,args.height,args.quality,cb);
   }
 };
 
