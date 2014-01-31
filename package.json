@@ -1,7 +1,7 @@
 { 
     "name": "magickwand",
     "description": "native bindings for imagemagick convert",
-    "version": "0.0.9",
+    "version": "0.0.10",
     "author": "Qasim Zaidi <qasim@zaidi.me>",
     "contributors" : [ 
       { "name": "Sameer Akhtar" },
