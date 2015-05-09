@@ -1,5 +1,93 @@
 #include "./magickwand.h"
 
+class ThumbnailWorker: public NanAsyncWorker {
+  public:
+    ThumbnailWorker(NanCallback *callback, int quality,
+        int width, int height, char *imagePath) : NanAsyncWorker(callback),
+    width(width), height(height), quality(quality)
+  {
+    this->imagePath = imagePath;
+  }
+
+  ~ThumbnailWorker() {}
+
+  void Execute() {
+    ExceptionType severity;
+    MagickWand *magick_wand = NewMagickWand();
+    MagickBooleanType status;
+    int width, height;
+
+    status = MagickReadImage(magick_wand,this->imagePath);
+
+    if (status == MagickFalse) {
+      this->error = MagickGetException(magick_wand,&severity);
+      DestroyMagickWand(magick_wand);
+      return;
+    }
+
+    if (this->height == 0 || this->width == 0) {
+      width = MagickGetImageWidth(magick_wand);
+      height = MagickGetImageHeight(magick_wand);
+
+      if (this->width == 0 && this->height == 0) {
+        this->width = width;
+        this->height = height;
+      } else {
+        float aspectRatio = (width * 1.0)/height;
+        if (this->height == 0)
+          this->height =  this->width * (1.0/aspectRatio);
+        else if (this->width == 0)
+          this->width = this->height * aspectRatio;
+      }
+    }
+
+    MagickThumbnailImage(magick_wand,this->width,this->height);
+
+    if (this->quality) 
+      MagickSetImageCompressionQuality(magick_wand,this->quality);
+
+    this->resizedImage = (char *)MagickGetImageBlob(magick_wand,&this->resizedImageLen);
+
+    if (!this->resizedImage) {
+      this->error = MagickGetException(magick_wand,&severity);
+    }
+
+    DestroyMagickWand(magick_wand);
+  }
+
+  void HandleOKCallback() {
+    NanScope();
+
+    if (this->error) {
+      Local<Value> argv[] = {
+        NanError(this->error),
+        NanNull()
+      };
+      callback->Call(2, argv);
+      return;
+    }
+
+    Local<Value> argv[] = {
+      NanNull(),
+      NanBufferUse(this->resizedImage, this->resizedImageLen)
+    };
+
+    callback->Call(2, argv);
+  }
+
+  private: 
+    int width;
+    int height;
+    int quality;
+    char *imagePath;
+
+    // output
+    char *error;
+    char *resizedImage;
+    size_t resizedImageLen;
+};
+
+/*
 typedef struct thumbnailReq {
   Persistent<Function> cb;
   unsigned char *resizedImage;
@@ -12,7 +100,6 @@ typedef struct thumbnailReq {
   char imagefilepath[1];
 } ThumbnailReq;
 
-/* Resize image here */
 static void thumbnail(uv_work_t *req) {
   ThumbnailReq *mgr = (ThumbnailReq *)req->data;
   ExceptionType severity;
@@ -97,42 +184,32 @@ static void postThumbnail(uv_work_t *req) {
 
   delete req;
 }
+*/
 
-Handle<Value> thumbnailAsync (const Arguments& args) {
-  HandleScope scope;
+NAN_METHOD(thumbnailAsync) { 
+
+  NanScope();
+
   const char *usage = "Too few arguments: Usage: thumbnail(pathtoimgfile,width, height,quality,cb)";
-  int argc = 0;
   if (args.Length() != 5) {
-    return ThrowException(Exception::Error(String::New(usage)));
+    return NanThrowError(usage);
   }
 
-  String::Utf8Value name(args[argc++]);
-  int width = args[argc++]->Int32Value();
-  int height = args[argc++]->Int32Value();
-  int quality = args[argc++]->Int32Value();
+  String::Utf8Value name(args[0]);
+  int width = args[1]->Int32Value();
+  int height = args[2]->Int32Value();
+  int quality = args[3]->Int32Value();
 
-  Local<Function> cb = Local<Function>::Cast(args[argc++]);
+  NanCallback *cb = new NanCallback(args[4].As<Function>());
 
   if (width < 0 || height < 0) {
-    return ThrowException(Exception::Error(String::New("Invalid width/height arguments")));
+    return NanThrowError("Invalid width/height arguments");
   }
   
   if (quality < 0 || quality > 100) {
-    return ThrowException(Exception::Error(String::New("Invalid quality parameter")));
+    return NanThrowError("Invalid quality parameter");
   }
 
-  uv_work_t *req = new uv_work_t;
-  ThumbnailReq *mgr = (ThumbnailReq *) calloc(1,sizeof(ThumbnailReq) + name.length());
-  req->data = mgr;
-
-  mgr->cb = Persistent<Function>::New(cb);
-  mgr->width = width;
-  mgr->height = height;
-  mgr->quality = quality;
-
-  strncpy(mgr->imagefilepath,*name,name.length() + 1);
-
-  uv_queue_work(uv_default_loop(),req,thumbnail,(uv_after_work_cb)postThumbnail);
-
-  return Undefined();
+  NanAsyncQueueWorker(new ThumbnailWorker(cb, quality, width, height, strdup(*name)));
+  NanReturnUndefined();
 }

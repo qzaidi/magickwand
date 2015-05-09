@@ -11,7 +11,11 @@
             'OTHER_CFLAGS': [
               '<!@(Wand-config --cflags)'
             ],
-          }
+          },
+          "include_dirs" : [
+            "/usr/local/Cellar/imagemagick",
+            "<!(node -e \"require('nan')\")"
+          ]
         }, {
           'cflags': [
             '<!@(Wand-config --cflags)'

@@ -1,110 +1,105 @@
 #include "./magickwand.h"
 
-struct magickReq {
-  Persistent<Function> cb;
-  unsigned char *resizedImage;
-  char *exception;
-  char *format;
-  size_t resizedImageLen;
-  int quality;
+class ResizeWorker : public NanAsyncWorker {
+  public:
+    ResizeWorker(NanCallback *callback, int quality, 
+                int width, int height, 
+                char* imagePath, char *format) : NanAsyncWorker(callback) ,
+   width(width), height(height), quality(quality)
+   {
+      this->imagePath = imagePath;
+      this->format = format;
+    }
 
-  unsigned int width;
-  unsigned int height;
-  char imagefilepath[1];
+    ~ResizeWorker() {}
+
+    void Execute() {
+      MagickWand *magick_wand = NewMagickWand();
+      MagickBooleanType status;
+      ExceptionType severity;
+
+      int width, height;
+      float aspectRatio;
+
+      status = MagickReadImage(magick_wand,this->imagePath);
+
+      if (status == MagickFalse) {
+        this->error = MagickGetException(magick_wand,&severity);
+        DestroyMagickWand(magick_wand);
+        return;
+      }
+
+      if (this->height == 0 || this->width == 0) {
+        width = MagickGetImageWidth(magick_wand);
+        height = MagickGetImageHeight(magick_wand);
+
+        aspectRatio = (width * 1.0)/height;
+
+        if (this->height == 0)
+          this->height =  this->width * (1.0/aspectRatio);
+        else if (this->width == 0) 
+          this->width = this->height * aspectRatio;
+      }
+
+      if (this->width && this->height)
+        MagickResizeImage(magick_wand,this->width,this->height,LanczosFilter,1.0);
+
+      if (this->format) 
+        MagickSetImageFormat(magick_wand,this->format);
+
+      if (this->quality) 
+        MagickSetImageCompressionQuality(magick_wand,this->quality);
+
+      this->resizedImage = (char *) MagickGetImageBlob(magick_wand,&this->resizedImageLen);
+      if (!this->resizedImage) {
+        this->error = MagickGetException(magick_wand,&severity);
+      }
+
+      DestroyMagickWand(magick_wand);
+
+    }
+
+    void HandleOKCallback() {
+      NanScope();
+
+      if (this->error) {
+        Local<Value> argv[] = {
+          NanError(this->error),
+          NanNull()
+        };
+        callback->Call(2, argv);
+        return;
+      }
+
+      Local<Value> argv[] = {
+        NanNull(),
+        NanBufferUse(this->resizedImage, this->resizedImageLen)
+      };
+
+      callback->Call(2, argv);
+    }
+
+  private:
+    // input
+    int width;
+    int height;
+    int quality;
+    char *imagePath;
+    char *format;
+
+    // output
+    char *error;
+    char *resizedImage;
+    size_t resizedImageLen;
 };
 
-/* Resize image here */
-static void resize (uv_work_t *req) {
-  struct magickReq *mgr = (struct magickReq *)req->data;
-  ExceptionType severity;
-  MagickWand *magick_wand = NewMagickWand();
-  MagickBooleanType status;
-  int width, height;
-  float aspectRatio;
- 
-  status = MagickReadImage(magick_wand,mgr->imagefilepath);
+NAN_METHOD(resizeAsync) {
 
-  if (status == MagickFalse) {
-    mgr->exception = MagickGetException(magick_wand,&severity);
-    DestroyMagickWand(magick_wand);
-    return;
-  }
+  NanScope();
 
-  if (mgr->height == 0 || mgr->width == 0) {
-    width = MagickGetImageWidth(magick_wand);
-    height = MagickGetImageHeight(magick_wand);
-
-    aspectRatio = (width * 1.0)/height;
-
-    if (mgr->height == 0)
-      mgr->height =  mgr->width * (1.0/aspectRatio);
-    else if (mgr->width == 0) 
-      mgr->width = mgr->height * aspectRatio;
-  }
-
-  if (mgr->width && mgr->height)
-    MagickResizeImage(magick_wand,mgr->width,mgr->height,LanczosFilter,1.0);
-
-  if (mgr->format) 
-    MagickSetImageFormat(magick_wand,mgr->format);
-
-  if (mgr->quality) 
-    MagickSetImageCompressionQuality(magick_wand,mgr->quality);
-
-  mgr->resizedImage = MagickGetImageBlob(magick_wand,&mgr->resizedImageLen);
-  if (!mgr->resizedImage) {
-    mgr->exception = MagickGetException(magick_wand,&severity);
-  }
-
-  DestroyMagickWand(magick_wand);
-}
-
-/* this is for the callback */
-static void postResize(uv_work_t *req) {
-  HandleScope scope;
-  struct magickReq *mgr = (struct magickReq *)req->data;
-
-  Handle<Value> argv[3];
-  Local<Object> info = Object::New();
-
-  if (mgr->exception) {
-    argv[0] = Exception::Error(String::New(mgr->exception));
-    argv[1] = argv[2] = Undefined();
-    MagickRelinquishMemory(mgr->exception);
-  } else {
-    argv[0] = Undefined();
-    Buffer *buf = Buffer::New(mgr->resizedImageLen + 1);
-    memcpy(Buffer::Data(buf), mgr->resizedImage, mgr->resizedImageLen);
-    argv[1] = buf->handle_;
-    Local<Integer> width = Integer::New(mgr->width);
-    Local<Integer> height = Integer::New(mgr->height);
-    info->Set(String::NewSymbol("width"), width);
-    info->Set(String::NewSymbol("height"),height);
-    argv[2] = info;
-  }
-
-  TryCatch try_catch;
-
-  mgr->cb->Call(Context::GetCurrent()->Global(), 3, argv);
-
-  if (try_catch.HasCaught()) {
-    FatalException(try_catch);
-  }
-
-  mgr->cb.Dispose();
-  MagickRelinquishMemory(mgr->resizedImage);
-  if (mgr->format)
-    free(mgr->format);
-  free(mgr);
-
-  delete req;
-}
-
-Handle<Value> resizeAsync (const Arguments& args) {
-  HandleScope scope;
   const char *usage = "Too few arguments: Usage: resize(pathtoimgfile,new width, new height,quality,cb)";
   if (args.Length() != 6) {
-    return ThrowException(Exception::Error(String::New(usage)));
+    return NanThrowError(usage);
   }
 
   String::Utf8Value name(args[0]);
@@ -112,32 +107,22 @@ Handle<Value> resizeAsync (const Arguments& args) {
   int width = args[1]->Int32Value();
   int height = args[2]->Int32Value();
   int quality = args[3]->Int32Value();
+  char *imageFormat = nullptr;
 
-  Local<Function> cb = Local<Function>::Cast(args[5]);
+  NanCallback *cb = new NanCallback(args[5].As<Function>());
 
   if (width < 0 || height < 0) {
-    return ThrowException(Exception::Error(String::New("Invalid width/height arguments")));
+    return NanThrowError("Invalid width/height arguments");
   }
 
   if (quality < 0 || quality > 100) {
-    return ThrowException(Exception::Error(String::New("Invalid quality parameter")));
+    return NanThrowError("Invalid quality parameter");
   }
 
-  uv_work_t *req = new uv_work_t;
-  struct magickReq *mgr = (struct magickReq *) calloc(1,sizeof(struct magickReq) + name.length());
-  req->data = mgr;
+  if (*format) {
+    imageFormat = strdup(*format);
+  }
 
-  mgr->cb = Persistent<Function>::New(cb);
-  mgr->width = width;
-  mgr->height = height;
-  mgr->quality = quality;
-
-  if (*format)
-    mgr->format = strdup(*format);
-
-  strncpy(mgr->imagefilepath,*name,name.length() + 1);
-
-  uv_queue_work(uv_default_loop(),req,resize,(uv_after_work_cb)postResize);
-
-  return Undefined();
+  NanAsyncQueueWorker(new ResizeWorker(cb, quality, width, height, strdup(*name), imageFormat));
+  NanReturnUndefined();
 }

@@ -3,7 +3,7 @@
 var fs = require('fs');
 var magickwand = require('../index');
 
-magickwand.resize('/tmp/abc.jpg',  { width: 1000, quality:80 }, function(err,data,info) {
+magickwand.resize('./abc.jpg',  { width: 128, quality:80 }, function(err,data,info) {
  if (err) {
    console.log(err);
  } else {
@@ -13,7 +13,7 @@ magickwand.resize('/tmp/abc.jpg',  { width: 1000, quality:80 }, function(err,dat
  }
 }); 
 
-magickwand.thumbnail('/tmp/abc.jpg', { width: 126 }, function(err,data,info) {
+magickwand.thumbnail('./abc.jpg', { width: 126 }, function(err,data,info) {
  if (err) {
    console.log(err);
  } else {

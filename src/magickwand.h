@@ -6,17 +6,22 @@
 #endif
 
 #include <node.h>
+#include <nan.h>
 #include <node_buffer.h>
 #include <stdlib.h>
 #include <string.h>
 #include <wand/MagickWand.h>
 
-using namespace node;
-using namespace v8;
+using v8::FunctionTemplate;
+using v8::Local;
+using v8::Null;
+using v8::Value;
+using v8::Handle;
+using v8::Object;
+using v8::String;
+using v8::Function;
 
-extern "C" void init(Handle<Object>);
-
-Handle<Value> resizeAsync (const Arguments& args);
-Handle<Value> thumbnailAsync (const Arguments& args);
+NAN_METHOD(resizeAsync);
+NAN_METHOD(thumbnailAsync);
 
 #endif /* _MAGICKWAND_H */

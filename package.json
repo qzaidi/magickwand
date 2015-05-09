@@ -8,6 +8,7 @@
       { "name": "Binayak Mishra" }
      ],
     "dependencies": {
+      "nan": "*"
     },
     "repository": "git://github.com/qzaidi/magickwand.git",
     "main": "index",
@@ -19,5 +20,5 @@
             "type" : "MIT"
         }
     ],
-    "engines": { "node" : ">=0.6.0" }
+    "engines": { "node" : ">=0.8.0" }
 }
