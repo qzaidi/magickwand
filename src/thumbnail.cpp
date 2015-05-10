@@ -20,7 +20,7 @@ class ThumbnailWorker: public NanAsyncWorker {
     status = MagickReadImage(magick_wand,this->imagePath);
 
     if (status == MagickFalse) {
-      this->error = MagickGetException(magick_wand,&severity);
+      SetErrorMessage(MagickGetException(magick_wand,&severity));
       DestroyMagickWand(magick_wand);
       return;
     }
@@ -49,7 +49,7 @@ class ThumbnailWorker: public NanAsyncWorker {
     this->resizedImage = (char *)MagickGetImageBlob(magick_wand,&this->resizedImageLen);
 
     if (!this->resizedImage) {
-      this->error = MagickGetException(magick_wand,&severity);
+      SetErrorMessage(MagickGetException(magick_wand,&severity));
     }
 
     DestroyMagickWand(magick_wand);
@@ -58,21 +58,17 @@ class ThumbnailWorker: public NanAsyncWorker {
   void HandleOKCallback() {
     NanScope();
 
-    if (this->error) {
-      Local<Value> argv[] = {
-        NanError(this->error),
-        NanNull()
-      };
-      callback->Call(2, argv);
-      return;
-    }
+    Local<Object> info = NanNew<Object>(); 
+    info->Set(NanNew("width"),NanNew<Integer>(this->width));
+    info->Set(NanNew("height"),NanNew<Integer>(this->height));
 
     Local<Value> argv[] = {
       NanNull(),
-      NanBufferUse(this->resizedImage, this->resizedImageLen)
+      NanBufferUse(this->resizedImage, this->resizedImageLen),
+      info
     };
 
-    callback->Call(2, argv);
+    callback->Call(3, argv);
   }
 
   private: 
@@ -82,7 +78,6 @@ class ThumbnailWorker: public NanAsyncWorker {
     char *imagePath;
 
     // output
-    char *error;
     char *resizedImage;
     size_t resizedImageLen;
 };

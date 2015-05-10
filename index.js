@@ -6,7 +6,7 @@ var magickwand = {
   resize: function(imagefile, options, cb) {
 
     if (Object.keys(options).length == 0) {
-      throw new Error('Invalid width/height/format/quality arguments');
+      return cb(new Error('Invalid width/height/format/quality arguments'));
     }
 
     [ 'quality', 'width', 'height' ].forEach(function(param) {

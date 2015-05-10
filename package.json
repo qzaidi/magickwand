@@ -10,8 +10,14 @@
     "dependencies": {
       "nan": "*"
     },
+    "devDependencies": {
+      "mmmagic": "*"
+    },
     "repository": "git://github.com/qzaidi/magickwand.git",
     "main": "index",
+    "scripts": {
+      "test": "mocha -R spec ./test/test.js"
+    },
     "bugs": {
         "url": "https://github.com/qzaidi/magickwand/issues"
     },
