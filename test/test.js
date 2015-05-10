@@ -80,5 +80,21 @@ describe("Basic", function() {
         });
       });
     });
+
+    it("resize should covert formats", function(done) {
+      magickwand.resize(imagePath, { format: "png", width: 0, height: 50 }, function(err,data,info) {
+        assert(err == undefined);
+        assert(data.length > 0);
+        var magic = new Magic();
+        magic.detect(data, function(err,res) {
+          assert(err == undefined);
+          assert(res.indexOf('62 x 50') > -1);
+          assert(res.indexOf('PNG') > -1);
+          assert(info != undefined && info.width == 62)
+          done();
+        });
+      });
+    });
+
   });
 });
